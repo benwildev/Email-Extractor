@@ -688,6 +688,8 @@ document.getElementById('excelUploadBtn').addEventListener('click', async () => 
   const formData = new FormData();
   formData.append('file', selectedFile);
   formData.append('sheetName', document.getElementById('excelSheetName').value.trim());
+  formData.append('startRow', document.getElementById('excelStartRow').value);
+  formData.append('endRow', document.getElementById('excelEndRow').value);
 
   try {
     const resp = await fetch('/api/excel/upload', { method: 'POST', body: formData });
@@ -746,10 +748,13 @@ document.getElementById('excelProcessBtn').addEventListener('click', async () =>
   addLog('Starting batch processing...');
 
   try {
+    const startRow = document.getElementById('excelStartRow').value;
+    const endRow = document.getElementById('excelEndRow').value;
+
     const resp = await fetch('/api/excel/process', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fileId: currentFileId, sheetName }),
+      body: JSON.stringify({ fileId: currentFileId, sheetName, startRow, endRow }),
     });
 
     if (!resp.ok) {

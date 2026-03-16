@@ -10,7 +10,7 @@ const OBFUSCATED_PATTERNS = [
 
 const IGNORE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.css', '.js', '.woff', '.woff2', '.ttf', '.eot', '.ico', '.webp'];
 
-const COMPANY_EMAIL_PREFIXES = /^(info|contact|hello|hi|support|sales|office|press|media|editorial|editors|editor|news|advertising|advert|digital|partnerships|admin|team|enquiries|enquiry|enquire|general|mail|help|business|marketing|hr|careers|jobs|webmaster|postmaster|ask|reach|tips|feedback|submissions|submit|contribute|guest|write|pitch|reservations|reservation|bookings|booking|orders|order|billing|accounts|payments|returns|shipping|delivery|events|service|services|reception|concierge|membership|noreply|no-reply|donotreply|newsletter|notifications|alerts|updates|deals|offers|promotions|customerservice|customercare|studio|hello)@/;
+const COMPANY_EMAIL_PREFIXES = /^(info|contact|hello|hi|support|sales|office|press|media|editorial|editors|editor|news|advertising|advert|digital|partnerships|admin|team|enquiries|enquiry|enquire|general|mail|help|business|marketing|hr|careers|jobs|webmaster|postmaster|ask|reach|tips|feedback|submissions|submit|contribute|guest|write|pitch|reservations|reservation|bookings|booking|orders|order|billing|accounts|payments|returns|shipping|delivery|events|service|services|reception|concierge|membership|noreply|no-reply|donotreply|newsletter|notifications|alerts|updates|deals|offers|promotions|customerservice|customercare|studio|hello|privacy|legal|security|web|helpdesk|desk|staff|member|people|humanresources|recruitment|talent|joinus|workwithus|partner|advertise|pressrelease|mediaenquiry)@/;
 
 const LEADERSHIP_TITLES = [
   'CEO', 'Chief Executive Officer',
@@ -139,6 +139,39 @@ const NOT_A_NAME = new Set([
   'view', 'haven', 'dale', 'field', 'wood', 'woods', 'forest',
   'bridge', 'crossing', 'landing', 'junction', 'falls', 'summit',
   'town', 'township', 'village', 'borough', 'estates',
+  'zapier', 'hubspot', 'slack', 'shopify', 'wordpress', 'google', 'facebook', 'twitter', 'linkedin', 'instagram',
+  'through', 'using', 'via', 'from', 'with', 'under', 'upon', 'into', 'onto', 'between',
+  'since', 'during', 'before', 'after', 'against', 'without', 'within', 'beyond',
+  'towards', 'beside', 'around', 'about', 'above', 'below', 'across', 'behind',
+  'among', 'despite', 'except', 'unlike', 'unless', 'until', 'whether',
+  'whose', 'which', 'what', 'where', 'when', 'how', 'why',
+  'their', 'these', 'those', 'that', 'this', 'each', 'every', 'either', 'neither',
+  'another', 'any', 'some', 'much', 'many', 'most', 'least',
+  'both', 'such', 'very', 'quite', 'rather', 'really',
+  'just', 'only', 'even', 'also', 'instead', 'besides',
+  'moreover', 'however', 'therefore', 'otherwise', 'nevertheless',
+  'always', 'never', 'often', 'sometimes', 'usually',
+  'certainly', 'probably', 'possibly', 'maybe', 'perhaps',
+  'actually', 'truly', 'really', 'clearly', 'simply',
+  'likely', 'unlikely', 'surely', 'hardly', 'scarcely',
+  'company', 'agency', 'studio', 'group', 'team',
+  'department', 'division', 'office', 'branch',
+  'member', 'staff', 'creator', 'author', 'editor',
+  'contributor', 'reviewer', 'expert', 'specialist',
+  'manager', 'director', 'founder', 'owner',
+  'president', 'partner', 'principal',
+  'creative', 'digital', 'marketing', 'social', 'media',
+  'editorial', 'content', 'production', 'publishing',
+  'service', 'solution', 'system', 'network',
+  'technology', 'innovation', 'engineering',
+  'research', 'analysis', 'legal', 'finance',
+  'health', 'medical', 'education', 'science',
+  'property', 'estate', 'building', 'construction',
+  'energy', 'power', 'force', 'global', 'international',
+  'general', 'professional', 'standard', 'premium',
+  'professionals', 'specialists', 'experts', 'consultants', 'advisors',
+  'first', 'last', 'next', 'previous', 'recent',
+  'current', 'available', 'required', 'necessary',
 ]);
 
 const COMMON_ENGLISH_WORDS = new Set([
@@ -210,8 +243,10 @@ function isValidPersonName(name) {
   for (const word of words) {
     const clean = word.replace(/['-]/g, '');
     if (clean.length < 2) return false;
-    if (NOT_A_NAME.has(word.toLowerCase())) return false;
-    if (MONTH_NAMES.has(word.toLowerCase())) return false;
+    const lower = word.toLowerCase();
+    if (NOT_A_NAME.has(lower)) return false;
+    if (COMMON_ENGLISH_WORDS.has(lower)) return false;
+    if (MONTH_NAMES.has(lower)) return false;
     if (!/^[A-Z]/.test(word)) return false;
   }
   if (/^\d/.test(name)) return false;
@@ -247,6 +282,21 @@ function isValidPersonName(name) {
   return true;
 }
 
+function decodeCloudflareEmail(hex) {
+  if (!hex) return '';
+  try {
+    const r = parseInt(hex.substr(0, 2), 16);
+    let email = '';
+    for (let n = 2; n < hex.length; n += 2) {
+      const i = parseInt(hex.substr(n, 2), 16) ^ r;
+      email += String.fromCharCode(i);
+    }
+    return email;
+  } catch (e) {
+    return '';
+  }
+}
+
 function filterEmail(email) {
   const lower = email.toLowerCase();
   if (IGNORE_EXTENSIONS.some(ext => lower.endsWith(ext))) return false;
@@ -258,6 +308,7 @@ function filterEmail(email) {
   if (lower.includes('no-reply')) return false;
   if (lower.includes('sentry-next')) return false;
   if (lower.includes('cloudflare')) return false;
+  if (lower.includes('zapier')) return false;
   return true;
 }
 
@@ -556,9 +607,19 @@ function extractStructuredPeople(html) {
 function extractFromPage(html, options = {}) {
   if (!html) return { personalEmails: [], companyEmails: [], people: [] };
 
-  let textContent;
+  let cfEmails = [];
   try {
     const $ = cheerio.load(html);
+    $('[data-cfemail], .__cf_email__').each((_, el) => {
+      const hex = $(el).attr('data-cfemail') || $(el).text().trim();
+      if (hex && /^[0-9a-f]+$/i.test(hex)) {
+        const decoded = decodeCloudflareEmail(hex);
+        if (decoded && filterEmail(decoded)) {
+          cfEmails.push(decoded);
+        }
+      }
+    });
+
     $('script').remove();
     $('style').remove();
     textContent = $.text();
@@ -571,7 +632,7 @@ function extractFromPage(html, options = {}) {
 
   const emails = extractEmails(textContent);
   const hrefEmails = extractEmails(html);
-  const allEmails = [...new Set([...emails, ...hrefEmails])];
+  const allEmails = [...new Set([...emails, ...hrefEmails, ...cfEmails])];
 
   const { personalEmails, companyEmails } = separateEmails(allEmails);
   const titlePeople = extractKeyPeople(html);

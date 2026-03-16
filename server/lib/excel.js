@@ -12,7 +12,7 @@ function cellRef(col, row) {
   return col + row;
 }
 
-function parseExcelFile(buffer, sheetName) {
+function parseExcelFile(buffer, sheetName, startRow, endRow) {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
 
   const name = sheetName || workbook.SheetNames[0];
@@ -24,7 +24,10 @@ function parseExcelFile(buffer, sheetName) {
   const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
   const queue = [];
 
-  for (let row = 1; row <= range.e.r; row++) {
+  const start = startRow ? Math.max(1, parseInt(startRow) - 1) : 1;
+  const end = endRow ? Math.min(range.e.r, parseInt(endRow) - 1) : range.e.r;
+
+  for (let row = start; row <= end; row++) {
     const urlCell = sheet[cellRef('C', row + 1)];
     const emailCell = sheet[cellRef('I', row + 1)];
 
@@ -81,7 +84,7 @@ function writeResultsToExcel(buffer, sheetName, results) {
   return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 }
 
-function getSheetPreviewFromWorkbook(workbook, sheetName) {
+function getSheetPreviewFromWorkbook(workbook, sheetName, startRow, endRow) {
   const name = sheetName || workbook.SheetNames[0];
   const sheet = workbook.Sheets[name];
   if (!sheet) return { headers: [], rows: [] };
@@ -102,8 +105,13 @@ function getSheetPreviewFromWorkbook(workbook, sheetName) {
 
   const totalRows = range.e.r;
   const PREVIEW_LIMIT = 500;
+  
+  const start = startRow ? Math.max(1, parseInt(startRow) - 1) : 1;
+  const end = endRow ? Math.min(range.e.r, parseInt(endRow) - 1) : Math.min(range.e.r, start + PREVIEW_LIMIT - 1);
+
   const rows = [];
-  for (let r = 1; r <= Math.min(range.e.r, PREVIEW_LIMIT); r++) {
+  for (let r = start; r <= end; r++) {
+    if (rows.length >= PREVIEW_LIMIT) break;
     const rowData = { rowIndex: r + 1, cells: [] };
     for (let c = 0; c <= maxCol; c++) {
       const cell = sheet[colLetters[c] + (r + 1)];
@@ -115,9 +123,9 @@ function getSheetPreviewFromWorkbook(workbook, sheetName) {
   return { headers, rows, colLetters, totalRows };
 }
 
-function getSheetPreview(buffer, sheetName) {
+function getSheetPreview(buffer, sheetName, startRow, endRow) {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
-  return getSheetPreviewFromWorkbook(workbook, sheetName);
+  return getSheetPreviewFromWorkbook(workbook, sheetName, startRow, endRow);
 }
 
 module.exports = {

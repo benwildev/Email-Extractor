@@ -121,9 +121,11 @@ router.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
   const sheetName = req.body.sheetName || '';
+  const startRow = req.body.startRow || '';
+  const endRow = req.body.endRow || '';
 
   try {
-    const { queue, sheetName: resolvedSheet, sheetNames } = parseExcelFile(req.file.buffer, sheetName || undefined);
+    const { queue, sheetName: resolvedSheet, sheetNames } = parseExcelFile(req.file.buffer, sheetName || undefined, startRow, endRow);
     const fileId = crypto.randomBytes(12).toString('hex');
 
     fs.writeFileSync(filePath(fileId), req.file.buffer);
@@ -142,7 +144,7 @@ router.post('/upload', upload.single('file'), (req, res) => {
     });
 
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
-    const preview = getSheetPreviewFromWorkbook(workbook, resolvedSheet);
+    const preview = getSheetPreviewFromWorkbook(workbook, resolvedSheet, startRow, endRow);
 
     res.json({
       success: true,
@@ -158,7 +160,7 @@ router.post('/upload', upload.single('file'), (req, res) => {
 });
 
 router.post('/process', async (req, res) => {
-  const { fileId, sheetName } = req.body;
+  const { fileId, sheetName, startRow, endRow } = req.body;
   if (!fileId) return res.status(400).json({ error: 'fileId is required' });
 
   const entry = ensureBuffer(fileId);
@@ -179,7 +181,7 @@ router.post('/process', async (req, res) => {
 
     const ROW_CONCURRENCY = 3;
 
-    const { queue } = parseExcelFile(entry.buffer, sheet);
+    const { queue } = parseExcelFile(entry.buffer, sheet, startRow, endRow);
     const total = queue.length;
     const allResults = [];
 

@@ -278,8 +278,8 @@ async function crawlDomain(url) {
     const all = [...new Set(emails)];
     if (!domain) return all;
     const onDomain = all.filter(e => e.toLowerCase().endsWith('@' + domain));
-    if (onDomain.length > 0) return onDomain;
-    return all;
+    const offDomain = all.filter(e => !e.toLowerCase().endsWith('@' + domain));
+    return [...onDomain, ...offDomain].slice(0, 50);
   }
 
   const uniquePersonalEmails = filterByDomain(allPersonalEmails, siteDomain);
