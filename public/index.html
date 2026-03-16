@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lead Extractor Pro</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-left">
+        <h1>Lead Extractor Pro</h1>
+        <span class="subtitle">Extract emails, contacts & verify leads</span>
+      </div>
+      <div class="header-right">
+        <span class="badge" id="totalBadge">0 leads</span>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab" data-tab="dashboard">Dashboard</button>
+      <button class="tab active" data-tab="single">Single Scan</button>
+      <button class="tab" data-tab="bulk">Bulk Scan</button>
+      <button class="tab" data-tab="sheets">Import File</button>
+      <button class="tab" data-tab="verifier">Email Verifier</button>
+      <button class="tab" data-tab="results">Results</button>
+    </nav>
+
+    <div class="tab-content" id="tab-dashboard">
+      <div class="card">
+        <div class="dashboard-stats">
+          <div class="dash-stat">
+            <div class="dash-stat-value" id="dashTotalLeads">0</div>
+            <div class="dash-stat-label">Total Leads</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-stat-value" id="dashVerified">0</div>
+            <div class="dash-stat-label">Verified Emails</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-stat-value" id="dashSafeToSend">0</div>
+            <div class="dash-stat-label">Safe to Send</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-stat-value" id="dashRisky">0</div>
+            <div class="dash-stat-label">Risky</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="dash-header-row">
+          <h3>Recent Leads</h3>
+          <div class="dash-actions">
+            <button id="dashExportBtn" class="btn btn-secondary btn-small">Export CSV</button>
+            <button id="dashClearBtn" class="btn btn-danger btn-small">Clear All</button>
+          </div>
+        </div>
+        <div class="results-table-wrap">
+          <table class="results-table" id="dashTable">
+            <thead>
+              <tr>
+                <th>Domain</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Mail Verifier</th>
+                <th>Contact</th>
+                <th>Date</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="dashBody"></tbody>
+          </table>
+        </div>
+        <p class="empty-state" id="dashEmpty">No leads saved yet. Run a scan to get started.</p>
+      </div>
+    </div>
+
+    <div class="tab-content active" id="tab-single">
+      <div class="card">
+        <label class="label">Website URL</label>
+        <div class="input-row">
+          <input type="text" id="singleUrl" placeholder="https://example.com" class="input">
+          <button id="scanBtn" class="btn btn-primary">Scan</button>
+        </div>
+      </div>
+
+      <div class="card hidden" id="singleStatus">
+        <div class="status-bar">
+          <span class="status-label">Status</span>
+          <span class="status-value" id="singleStatusText">Scanning...</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="singleProgress"></div></div>
+      </div>
+
+      <div class="card hidden" id="singleResult">
+        <h3>Scan Results</h3>
+        <div id="singleResultContent"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-bulk">
+      <div class="card">
+        <label class="label">Domains (one per line)</label>
+        <textarea id="bulkDomains" class="textarea" rows="6" placeholder="example.com&#10;another-site.com&#10;website.org"></textarea>
+        <div class="input-row" style="margin-top: 12px;">
+          <button id="bulkScanBtn" class="btn btn-primary">Start Bulk Scan</button>
+          <button id="bulkStopBtn" class="btn btn-secondary hidden">Stop</button>
+        </div>
+      </div>
+
+      <div class="card hidden" id="bulkStatus">
+        <div class="status-bar">
+          <span class="status-label">Progress</span>
+          <span class="status-value" id="bulkStatusText">0 / 0</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="bulkProgress"></div></div>
+        <div class="stats-row">
+          <span>Processed: <strong id="bulkProcessed">0</strong></span>
+          <span>Found: <strong id="bulkFound">0</strong></span>
+        </div>
+      </div>
+
+      <div id="bulkResults"></div>
+    </div>
+
+    <div class="tab-content" id="tab-sheets">
+      <div class="card">
+        <label class="label">Upload Excel File (.xlsx)</label>
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden">
+          <div class="upload-content" id="uploadContent">
+            <p class="upload-text">Click to select or drag & drop your .xlsx file</p>
+            <p class="upload-hint">Export your Google Sheet as .xlsx first</p>
+          </div>
+          <div class="upload-success hidden" id="uploadSuccess">
+            <span class="upload-filename" id="uploadFilename"></span>
+            <button class="btn btn-small btn-secondary" id="removeFileBtn">Remove</button>
+          </div>
+        </div>
+        <label class="label" style="margin-top: 12px;">Sheet Name</label>
+        <input type="text" id="excelSheetName" placeholder="Sheet1 (leave empty for first sheet)" class="input">
+        <div class="info-box">
+          <strong>Column Mapping:</strong> Reads URLs from Col C, writes Name to H, Email to I, Contact to J, Mail Verifier to L. Skips Col K (Niche). Skips rows where Col I has data.
+        </div>
+        <div class="input-row" style="margin-top: 12px;">
+          <button id="excelUploadBtn" class="btn btn-secondary">Check Rows</button>
+          <button id="excelProcessBtn" class="btn btn-primary" disabled>Start Processing</button>
+        </div>
+        <div class="hidden" id="excelRowInfo" style="margin-top: 8px; font-size: 13px; color: var(--text-secondary);"></div>
+      </div>
+
+      <div class="card hidden" id="excelStatus">
+        <div class="status-bar">
+          <span class="status-label">Batch Progress</span>
+          <span class="status-value" id="excelStatusText">0 / 0</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="excelProgress"></div></div>
+        <div class="stats-row">
+          <span>Processed: <strong id="excelProcessed">0</strong></span>
+          <span>Found: <strong id="excelFound">0</strong></span>
+        </div>
+      </div>
+
+      <div class="card hidden" id="excelDownloadCard">
+        <div class="input-row">
+          <button id="excelDownloadBtn" class="btn btn-primary">Download Results (.xlsx)</button>
+        </div>
+      </div>
+
+      <div id="excelLog" class="log-box hidden"></div>
+
+      <div class="card hidden" id="excelPreviewCard">
+        <div class="preview-header">
+          <h3>Sheet Preview</h3>
+          <span class="preview-count" id="previewCount"></span>
+        </div>
+        <div class="excel-preview-wrap">
+          <table class="excel-preview-table" id="excelPreviewTable">
+            <thead id="excelPreviewHead"></thead>
+            <tbody id="excelPreviewBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-verifier">
+      <div class="card">
+        <label class="label">Verify a Single Email</label>
+        <div class="input-row">
+          <input type="text" id="verifyEmail" placeholder="name@example.com" class="input">
+          <button id="verifyBtn" class="btn btn-primary">Verify</button>
+        </div>
+      </div>
+
+      <div class="card hidden" id="verifyResult">
+        <div class="verify-result-header">
+          <div class="verify-score-circle" id="verifyScoreCircle">
+            <span class="verify-score-num" id="verifyScoreNum">-</span>
+            <span class="verify-score-label">Score</span>
+          </div>
+          <div class="verify-result-summary">
+            <div class="verify-email-display" id="verifyEmailDisplay"></div>
+            <div class="verify-rating-badge" id="verifyRatingBadge"></div>
+            <div class="verify-status-text" id="verifyStatusText"></div>
+          </div>
+        </div>
+
+        <div class="verify-checks">
+          <div class="verify-check-item" id="chk-syntax">
+            <span class="check-icon"></span>
+            <span class="check-label">Syntax Valid</span>
+            <span class="check-detail" id="chk-syntax-detail"></span>
+          </div>
+          <div class="verify-check-item" id="chk-disposable">
+            <span class="check-icon"></span>
+            <span class="check-label">Not Disposable</span>
+            <span class="check-detail" id="chk-disposable-detail"></span>
+          </div>
+          <div class="verify-check-item" id="chk-domain">
+            <span class="check-icon"></span>
+            <span class="check-label">Domain Exists</span>
+            <span class="check-detail" id="chk-domain-detail"></span>
+          </div>
+          <div class="verify-check-item" id="chk-mx">
+            <span class="check-icon"></span>
+            <span class="check-label">MX Records Found</span>
+            <span class="check-detail" id="chk-mx-detail"></span>
+          </div>
+          <div class="verify-check-item" id="chk-smtp">
+            <span class="check-icon"></span>
+            <span class="check-label">SMTP Mailbox Check</span>
+            <span class="check-detail" id="chk-smtp-detail"></span>
+          </div>
+        </div>
+
+        <div class="verify-detail-grid">
+          <div class="verify-detail-section" id="verifyMxSection">
+            <div class="verify-detail-title">MX Records</div>
+            <div id="verifyMxList" class="verify-mx-list"></div>
+          </div>
+          <div class="verify-detail-section">
+            <div class="verify-detail-title">SMTP Details</div>
+            <div id="verifySmtpDetail" class="verify-smtp-detail"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 8px;">
+        <label class="label">Bulk Email Verify</label>
+        <textarea id="bulkVerifyEmails" class="textarea" rows="6" placeholder="Enter one email per line:&#10;john@example.com&#10;jane@company.org&#10;contact@website.com"></textarea>
+        <div class="input-row" style="margin-top: 12px;">
+          <button id="bulkVerifyBtn" class="btn btn-primary">Verify All</button>
+          <button id="bulkVerifyStopBtn" class="btn btn-secondary hidden">Stop</button>
+          <button id="bulkVerifyClearBtn" class="btn btn-secondary">Clear</button>
+        </div>
+      </div>
+
+      <div class="card hidden" id="bulkVerifyStatus">
+        <div class="status-bar">
+          <span class="status-label">Progress</span>
+          <span class="status-value" id="bulkVerifyStatusText">0 / 0</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="bulkVerifyProgress"></div></div>
+        <div class="stats-row">
+          <span>Checked: <strong id="bulkVerifyChecked">0</strong></span>
+          <span>Safe: <strong id="bulkVerifySafe">0</strong></span>
+          <span>Risky: <strong id="bulkVerifyRisky">0</strong></span>
+          <span>Unsafe: <strong id="bulkVerifyUnsafe">0</strong></span>
+        </div>
+      </div>
+
+      <div class="results-table-wrap hidden" id="bulkVerifyTableWrap">
+        <table class="results-table" id="bulkVerifyTable">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Rating</th>
+              <th>Score</th>
+              <th>Status</th>
+              <th>MX Records</th>
+              <th>SMTP</th>
+              <th>Disposable</th>
+            </tr>
+          </thead>
+          <tbody id="bulkVerifyBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-results">
+      <div class="card">
+        <div class="input-row">
+          <input type="text" id="filterInput" placeholder="Filter results..." class="input">
+          <button id="exportCsvBtn" class="btn btn-secondary">Export CSV</button>
+          <button id="copyAllBtn" class="btn btn-secondary">Copy All</button>
+          <button id="clearResultsBtn" class="btn btn-danger">Clear</button>
+        </div>
+      </div>
+
+      <div class="results-table-wrap">
+        <table class="results-table" id="resultsTable">
+          <thead>
+            <tr>
+              <th>Domain</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Mail Verifier</th>
+              <th>Contact</th>
+              <th>MX Records</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+      </div>
+      <p class="empty-state" id="emptyState">No results yet. Run a scan to see data here.</p>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

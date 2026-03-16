@@ -1,0 +1,106 @@
+You are a senior JavaScript and Chrome Extension developer.
+
+I have imported a GitHub repository for a Chrome extension called "Email Extractor".
+Your job is to analyze the entire project and upgrade it into a powerful lead-extraction tool.
+
+Step 1 — Analyze the project
+• Read all files in the repository
+• Explain the purpose of each file
+• Identify where email extraction logic is implemented
+• Identify popup, content scripts, and background scripts
+
+Step 2 — Improve email extraction
+Enhance the email detection logic with these requirements:
+• Scan document.body.innerText instead of only HTML
+• Use regex: [A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,}
+• Remove duplicate emails
+• Ignore images, scripts, and CSS files
+• Return clean validated email lists
+
+Step 3 — Add multi-page crawling
+Extend the extension so it automatically scans common pages:
+
+/contact
+/contact-us
+/about
+/team
+/editorial
+/staff
+
+For each page:
+• Fetch page HTML
+• Extract emails
+• Merge results
+• Remove duplicates
+
+Step 4 — Detect obfuscated emails
+Add logic to convert patterns like:
+
+name [at] domain [dot] com
+name(at)domain(dot)com
+name AT domain DOT com
+
+Convert them into standard emails.
+
+Step 5 — Extract key people
+Add functionality to detect leadership names near titles:
+
+CEO
+Founder
+Editor
+Managing Editor
+Owner
+Director
+
+Return structured data like:
+
+{
+name: "John Smith",
+role: "Editor"
+}
+
+Step 6 — Improve extension UI
+Upgrade popup.html with:
+
+• modern clean interface
+• results table
+• email count
+• loading indicator
+• copy-to-clipboard button
+• export to CSV
+
+Step 7 — Add bulk domain scanning
+Allow users to paste a list of domains like:
+
+domain1.com
+domain2.com
+domain3.com
+
+The extension should sequentially open and scan each domain and collect results.
+
+Step 8 — Optimize architecture
+Refactor the project into a clean structure:
+
+/manifest.json
+/src/content.js
+/src/background.js
+/src/extractor.js
+/src/crawler.js
+/ui/popup.html
+/ui/popup.js
+/ui/styles.css
+
+Step 9 — Performance improvements
+Add:
+
+• request throttling
+• async crawling
+• deduplication
+• error handling
+
+Step 10 — Documentation
+After implementing all features:
+
+• Explain the updated architecture
+• Provide instructions to load the extension in Chrome developer mode
+• Provide instructions to build and maintain the project.

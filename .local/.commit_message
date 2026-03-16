@@ -1,0 +1,26 @@
+Task #4: Fix 502 crash - add server error guards and reduce crawl concurrency
+
+Root cause: With ROW_CONCURRENCY=5 and PAGE_BATCH_SIZE=5, the server had up to
+25 simultaneous outbound HTTP connections. Any unhandled rejection or memory
+exhaustion crashed the Node process, causing Replit's proxy to return 502 Bad
+Gateway on subsequent requests (including file uploads).
+
+Changes:
+
+1. server/index.js - Added process.on('uncaughtException') and
+   process.on('unhandledRejection') handlers that log the error and keep the
+   process alive instead of crashing.
+
+2. server/lib/crawler.js - Reduced PAGE_BATCH_SIZE from 5 to 3. Each domain
+   now fetches 3 pages at a time instead of 5.
+
+3. server/routes/excel.js - Reduced ROW_CONCURRENCY from 5 to 3. Three rows
+   are now processed concurrently instead of 5. Peak concurrent connections
+   capped at 9 (3 rows × 3 pages) instead of 25.
+
+4. server/routes/excel.js - Wrapped runWorker loop body in try/catch so that
+   individual row failures don't cause Promise.all to reject, ensuring the
+   SSE 'complete' event and final Excel export always execute.
+
+Still 5-10x faster than the original sequential approach (was ~70 min for 169
+rows, now ~15 min).

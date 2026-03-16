@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Lead Extractor Pro",
+  "version": "2.0",
+  "description": "Powerful lead extraction tool - extracts emails, key people, and social links from websites. Supports single scan, bulk scanning, and Google Sheets integration.",
+  "permissions": [
+    "identity",
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://*.google.com/*",
+    "https://*.googleapis.com/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "action": {
+    "default_popup": "ui/popup.html",
+    "default_title": "Lead Extractor Pro"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "oauth2": {
+    "client_id": "624363127697-ocir57ft21lj81unffkk7b6cqek3vk0c.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/spreadsheets"
+    ]
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
